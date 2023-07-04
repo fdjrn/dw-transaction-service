@@ -27,4 +27,4 @@ Service ini berfungsi untuk meng-handle transaksi saldo pengguna, seperti:
     - POST /api/v1/transaction/topup        ✅
     - POST /api/v1/transaction/deduct
     - POST /api/v1/transaction/distribute
-    - POST /api/v1/transaction/inquiry
+    - POST /api/v1/transaction/inquiry      ✅

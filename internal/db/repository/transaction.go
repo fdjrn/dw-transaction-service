@@ -55,6 +55,19 @@ func (t *TransactionRepository) FindByID(id interface{}) (interface{}, error) {
 	return trans, nil
 }
 
+func (t *TransactionRepository) FindByRefNo(id string) (interface{}, error) {
+	// filter condition
+	filter := bson.D{{"referenceNo", id}}
+
+	//var trans entity.BalanceTransaction
+	err := db.Mongo.Collection.BalanceTopup.FindOne(context.TODO(), filter).Decode(&t.Model)
+	if err != nil {
+		return nil, err
+	}
+
+	return t.Model, nil
+}
+
 func (t *TransactionRepository) RemoveByID(id interface{}) error {
 	filter := bson.D{{"_id", id}}
 	result, err := db.Mongo.Collection.BalanceTopup.DeleteOne(context.TODO(), filter)

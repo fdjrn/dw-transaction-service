@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/fdjrn/dw-transaction-service/internal/db/entity"
 	"github.com/fdjrn/dw-transaction-service/internal/db/repository"
@@ -11,6 +12,7 @@ import (
 	"github.com/fdjrn/dw-transaction-service/internal/utilities"
 	"github.com/fdjrn/dw-transaction-service/internal/utilities/str"
 	"github.com/gofiber/fiber/v2"
+	"go.mongodb.org/mongo-driver/mongo"
 	"time"
 )
 
@@ -136,4 +138,30 @@ func (t *TransactionHandler) TopupBalance(c *fiber.Ctx, isMerchant bool) error {
 
 func (t *TransactionHandler) DeductBalance(c *fiber.Ctx, isMerchant bool) error {
 	return nil
+}
+
+func (t *TransactionHandler) Inquiry(c *fiber.Ctx) error {
+
+	trx, err := t.repository.FindByRefNo(c.Params("refNo"))
+	if err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return c.Status(400).JSON(entity.Responses{
+				Success: false,
+				Message: fmt.Sprintf("cannot find transaction with current referenceNo (%s)", c.Params("refNo")),
+				Data:    nil,
+			})
+		}
+
+		return c.Status(500).JSON(entity.Responses{
+			Success: false,
+			Message: err.Error(),
+			Data:    nil,
+		})
+	}
+
+	return c.Status(200).JSON(entity.Responses{
+		Success: true,
+		Message: "transaction inquiry status successfully fetched",
+		Data:    trx,
+	})
 }

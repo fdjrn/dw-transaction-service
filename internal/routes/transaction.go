@@ -14,8 +14,8 @@ func initTransactionRoutes(router fiber.Router) {
 	})
 
 	r.Post("/deduct", func(c *fiber.Ctx) error {
+		//TODO
 		return nil
-		//return h.Deduct(c, false)
 	})
 
 	// ------------ MERCHANT ------------
@@ -24,19 +24,19 @@ func initTransactionRoutes(router fiber.Router) {
 	})
 
 	r.Post("/merchant/deduct", func(c *fiber.Ctx) error {
-		//return h.Unregister(c)
+		//TODO
 		return nil
 	})
 
 	r.Post("/merchant/distribute", func(c *fiber.Ctx) error {
-		//return h.GetMerchants(c)
+		//TODO
 		return nil
 	})
 
 	// ------------ UTILITIES ------------
-	r.Post("/inquiry", func(c *fiber.Ctx) error {
-		//return h.TransactionInquiry(c)
-		return nil
+	r.Get("/inquiry/:refNo", func(c *fiber.Ctx) error {
+		//TODO
+		return h.Inquiry(c)
 	})
 
 }
