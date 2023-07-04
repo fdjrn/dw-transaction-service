@@ -11,7 +11,7 @@ func initTransactionRoutes(router fiber.Router) {
 	h := handlers.NewTransactionHandler()
 
 	r.Post("/topup", func(c *fiber.Ctx) error {
-		return h.CreateTransaction(c, "utilities.TransTopUp", false)
+		return h.CreateTransaction(c, utilities.TransTopUp, false)
 	})
 
 	r.Post("/deduct", func(c *fiber.Ctx) error {
