@@ -1,0 +1,41 @@
+{
+  "appName": "TransactionService",
+  "debugMode": true,
+  "logOutput": "file",
+  "logPath": "./logs/transactionService.log",
+  "verboseApiResponse": true,
+  "server" : {
+    "port" : "8100"
+  },
+  "database" : {
+    "mongodb": {
+      "uri" : "<uri>",
+      "dbName": "<db-name>"
+    }
+  },
+  "kafka": {
+    "mode": "producer",
+    "brokers": "<broker>",
+    "sasl" : {
+      "enable": true,
+      "algorithm" : "sha256",
+      "user" : "<user>",
+      "password": "<password>"
+    },
+    "tls" : {
+      "enable": true,
+      "insecureSkipVerify": true
+    },
+    "producer" : {
+      "idempotent" : true,
+      "retryMax" : 1
+    },
+    "consumer" : {
+      "assignor" : "roundRobin",
+      "oldest" : "true",
+      "verbose" : false,
+      "consumerGroupName" : "mdw-transaction-cgn-local",
+      "topics": "mdw.transaction.topup.result"
+    }
+  }
+}
