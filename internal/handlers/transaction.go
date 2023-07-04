@@ -79,11 +79,7 @@ func (t *TransactionHandler) TopupBalance(c *fiber.Ctx, isMerchant bool) error {
 
 	// 1.3 check used partnerRefNumber
 	if t.repository.IsUsedPartnerRefNumber(payload.PartnerRefNumber) {
-		return c.Status(400).JSON(entity.Responses{
-			Success: false,
-			Message: "partnerRefNumber already exists",
-			Data:    fiber.Map{"partnerRefNumber": payload.PartnerRefNumber},
-		})
+		payload.Status = utilities.TrxStatusDuplicate
 	}
 
 	// 2. create topup trx data with default value (pending status)
@@ -103,6 +99,14 @@ func (t *TransactionHandler) TopupBalance(c *fiber.Ctx, isMerchant bool) error {
 			Success: false,
 			Message: err.Error(),
 			Data:    nil,
+		})
+	}
+
+	if payload.Status == utilities.TrxStatusDuplicate {
+		return c.Status(400).JSON(entity.Responses{
+			Success: false,
+			Message: "partnerRefNumber already exists",
+			Data:    transData,
 		})
 	}
 
