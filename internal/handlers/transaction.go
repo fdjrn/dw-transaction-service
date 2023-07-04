@@ -24,7 +24,25 @@ func NewTransactionHandler() TransactionHandler {
 	return TransactionHandler{repository: repository.NewTransactionRepository()}
 }
 
-func (t *TransactionHandler) TopupBalance(c *fiber.Ctx, isMerchant bool) error {
+func (t *TransactionHandler) rollbackTransaction(c *fiber.Ctx, id interface{}) error {
+	// remove current inserted document
+	err := t.repository.RemoveByID(id)
+	if err != nil {
+		return c.Status(500).JSON(entity.Responses{
+			Success: false,
+			Message: fmt.Sprintf("failed to remove document with id: %v", id),
+			Data:    nil,
+		})
+	}
+
+	return c.Status(500).JSON(entity.Responses{
+		Success: false,
+		Message: "failed to process request, broker or topic not founds",
+		Data:    nil,
+	})
+}
+
+func (t *TransactionHandler) CreateTransaction(c *fiber.Ctx, transType string, isMerchant bool) error {
 
 	payload := new(entity.BalanceTransaction)
 	if err := c.BodyParser(payload); err != nil {
@@ -60,6 +78,7 @@ func (t *TransactionHandler) TopupBalance(c *fiber.Ctx, isMerchant bool) error {
 		totAmt := int64(item.Qty) * item.Amount
 		tmpTotalAmt += totAmt
 	}
+
 	if payload.TotalAmount != tmpTotalAmt {
 		return c.Status(400).JSON(entity.Responses{
 			Success: false,
@@ -70,7 +89,7 @@ func (t *TransactionHandler) TopupBalance(c *fiber.Ctx, isMerchant bool) error {
 
 	payload.ReferenceNo = str.GenerateRandomString(8, "", "")
 	payload.Status = utilities.TrxStatusPending
-	payload.TransType = utilities.TransTopUp
+	payload.TransType = transType
 	tStamp := time.Now().UnixMilli()
 	payload.CreatedAt = tStamp
 	payload.UpdatedAt = tStamp
@@ -79,7 +98,11 @@ func (t *TransactionHandler) TopupBalance(c *fiber.Ctx, isMerchant bool) error {
 
 	// 1.3 check used partnerRefNumber
 	if t.repository.IsUsedPartnerRefNumber(payload.PartnerRefNumber) {
-		payload.Status = utilities.TrxStatusDuplicate
+		return c.Status(400).JSON(entity.Responses{
+			Success: false,
+			Message: "partnerRefNumber already exists",
+			Data:    nil,
+		})
 	}
 
 	// 2. create topup trx data with default value (pending status)
@@ -102,33 +125,24 @@ func (t *TransactionHandler) TopupBalance(c *fiber.Ctx, isMerchant bool) error {
 		})
 	}
 
-	if payload.Status == utilities.TrxStatusDuplicate {
-		return c.Status(400).JSON(entity.Responses{
-			Success: false,
-			Message: "partnerRefNumber already exists",
-			Data:    transData,
-		})
-	}
-
 	kMsg, _ := json.Marshal(transData)
 
-	err = kafka.ProduceMsg(topic.TopUpRequest, kMsg)
-	if err != nil {
-		// remove current inserted document
-		err = t.repository.RemoveByID(result)
-		if err != nil {
-			return c.Status(500).JSON(entity.Responses{
-				Success: false,
-				Message: fmt.Sprintf("failed to remove document with id: %v", result),
-				Data:    nil,
-			})
-		}
+	var topicMsg string
+	switch transType {
+	case utilities.TransTopUp:
+		topicMsg = topic.TopUpRequest
+	case utilities.TransPayment:
+		topicMsg = topic.DeductRequest
+	case utilities.TransDistribute:
+		topicMsg = topic.DistributionRequest
+	default:
+		//topicMsg = "unknown.topic"
+		return t.rollbackTransaction(c, result)
+	}
 
-		return c.Status(500).JSON(entity.Responses{
-			Success: false,
-			Message: "failed to process request",
-			Data:    nil,
-		})
+	err = kafka.ProduceMsg(topicMsg, kMsg)
+	if err != nil {
+		return t.rollbackTransaction(c, result)
 	}
 
 	// 4. send response http status accepted
