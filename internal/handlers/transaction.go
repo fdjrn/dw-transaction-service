@@ -136,7 +136,6 @@ func (t *TransactionHandler) CreateTransaction(c *fiber.Ctx, transType string, i
 	case utilities.TransDistribute:
 		topicMsg = topic.DistributionRequest
 	default:
-		//topicMsg = "unknown.topic"
 		return t.rollbackTransaction(c, result)
 	}
 
