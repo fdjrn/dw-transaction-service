@@ -20,7 +20,7 @@ func initTransactionRoutes(router fiber.Router) {
 
 	// ------------ MERCHANT ------------
 	r.Post("/merchant/topup", func(c *fiber.Ctx) error {
-		return h.CreateTransaction(c, utilities.TransPayment, true)
+		return h.CreateTransaction(c, utilities.TransTopUp, true)
 	})
 
 	r.Post("/merchant/deduct", func(c *fiber.Ctx) error {
