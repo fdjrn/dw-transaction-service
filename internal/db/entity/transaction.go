@@ -10,14 +10,13 @@ type TransactionItem struct {
 }
 
 type BalanceTransaction struct {
-	ID            string `json:"id,omitempty" bson:"_id,omitempty"`
-	TransDate     string `json:"transDate,omitempty" bson:"transDate"` // YYYYMMDDhhmmss
-	ReferenceNo   string `json:"referenceNo,omitempty" bson:"referenceNo"`
-	ReceiptNumber string `json:"receiptNumber,omitempty" bson:"receiptNumber"`
-	LastBalance   int64  `json:"currentBalance,omitempty" bson:"lastBalance"`
-	Status        string `json:"status,omitempty" bson:"status"`
-	TransType     string `json:"transType,omitempty" bson:"transType"` // C: Credit | D: Debit
-
+	ID               string            `json:"id,omitempty" bson:"_id,omitempty"`
+	TransDate        string            `json:"transDate,omitempty" bson:"transDate"` // YYYYMMDDhhmmss
+	ReferenceNo      string            `json:"referenceNo,omitempty" bson:"referenceNo"`
+	ReceiptNumber    string            `json:"receiptNumber,omitempty" bson:"receiptNumber"`
+	LastBalance      int64             `json:"lastBalance,omitempty" bson:"lastBalance"`
+	Status           string            `json:"status,omitempty" bson:"status"`
+	TransType        int               `json:"transType,omitempty" bson:"transType"` // (1) TopUp | (2) Payment | (3) Distribution
 	PartnerTransDate string            `json:"partnerTransDate" bson:"partnerTransDate"`
 	PartnerRefNumber string            `json:"partnerRefNumber" bson:"partnerRefNumber"`
 	PartnerID        string            `json:"partnerId" bson:"partnerId"`
@@ -26,7 +25,6 @@ type BalanceTransaction struct {
 	TerminalName     string            `json:"terminalName" bson:"terminalName"`
 	TotalAmount      int64             `json:"totalAmount" bson:"totalAmount"`
 	Items            []TransactionItem `json:"items" bson:"items"`
-
-	CreatedAt int64 `json:"createdAt,omitempty" bson:"createdAt,omitempty"`
-	UpdatedAt int64 `json:"updatedAt,omitempty" bson:"updatedAt,omitempty"`
+	CreatedAt        int64             `json:"createdAt,omitempty" bson:"createdAt,omitempty"`
+	UpdatedAt        int64             `json:"updatedAt,omitempty" bson:"updatedAt,omitempty"`
 }

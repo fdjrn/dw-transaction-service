@@ -140,16 +140,16 @@ func HandleMessages(message *sarama.ConsumerMessage) {
 		trx, err = handler.HandleTransactionResult(message)
 		if err != nil {
 			utilities.Log.Println("| failed to process consumed message for topic: ", message.Topic, ", with err: ", err.Error())
-		} else {
-			utilities.Log.Printf("| transaction with RefNo: %s, has been successfully updated\n", trx.ReferenceNo)
+			return
 		}
 
+		utilities.Log.Printf("| transaction with RefNo: %s, has been successfully updated\n", trx.ReferenceNo)
+		// TODO: hit api callback (MDL)
+		utilities.Log.Printf("| TODO next step is call Callback Endpoint from MDL")
+		return
 	default:
 		utilities.Log.Println("| Unknown topic message")
 		return
 	}
-
-	// TODO: hit api callback (MDL)
-	utilities.Log.Printf("| TODO next step is call Callback Endpoint from MDL")
 
 }

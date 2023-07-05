@@ -20,21 +20,25 @@ func NewTransactionRepository() TransactionRepository {
 	return TransactionRepository{Model: new(entity.BalanceTransaction)}
 }
 
-func (t *TransactionRepository) Create(transType string) (interface{}, error) {
-
+func getDefaultCollection(transType int) *mongo.Collection {
 	collection := new(mongo.Collection)
 	switch transType {
-	case utilities.TransTopUp:
+	case utilities.TransTypeTopUp:
 		collection = db.Mongo.Collection.BalanceTopup
-	case utilities.TransPayment:
+	case utilities.TransTypePayment:
 		collection = db.Mongo.Collection.BalanceDeduct
-	case utilities.TransDistribute:
+	case utilities.TransTypeDistribution:
 		collection = db.Mongo.Collection.BalanceDistribute
 	default:
-
+		collection = nil
 	}
 
-	result, err := collection.InsertOne(context.TODO(), t.Model)
+	return collection
+}
+
+func (t *TransactionRepository) Create(transType int) (interface{}, error) {
+
+	result, err := getDefaultCollection(transType).InsertOne(context.TODO(), t.Model)
 	if err != nil {
 		return nil, err
 	}
@@ -42,12 +46,12 @@ func (t *TransactionRepository) Create(transType string) (interface{}, error) {
 	return result.InsertedID, nil
 }
 
-func (t *TransactionRepository) FindByID(id interface{}) (interface{}, error) {
+func (t *TransactionRepository) FindByID(id interface{}, transType int) (interface{}, error) {
 	// filter condition
 	filter := bson.D{{"_id", id}}
 
 	//var trans entity.BalanceTransaction
-	err := db.Mongo.Collection.BalanceTopup.FindOne(context.TODO(), filter).Decode(t.Model)
+	err := getDefaultCollection(transType).FindOne(context.TODO(), filter).Decode(t.Model)
 	if err != nil {
 		return nil, err
 	}
@@ -55,22 +59,23 @@ func (t *TransactionRepository) FindByID(id interface{}) (interface{}, error) {
 	return t.Model, nil
 }
 
-func (t *TransactionRepository) FindByRefNo(id string) (interface{}, error) {
+func (t *TransactionRepository) FindByRefNo() error {
 	// filter condition
-	filter := bson.D{{"referenceNo", id}}
+	filter := bson.D{{"referenceNo", t.Model.ReferenceNo}}
 
 	//var trans entity.BalanceTransaction
-	err := db.Mongo.Collection.BalanceTopup.FindOne(context.TODO(), filter).Decode(t.Model)
+	err := getDefaultCollection(t.Model.TransType).FindOne(context.TODO(), filter).Decode(t.Model)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	return t.Model, nil
+	return nil
 }
 
-func (t *TransactionRepository) RemoveByID(id interface{}) error {
+func (t *TransactionRepository) RemoveByID(id interface{}, transType int) error {
+
 	filter := bson.D{{"_id", id}}
-	result, err := db.Mongo.Collection.BalanceTopup.DeleteOne(context.TODO(), filter)
+	result, err := getDefaultCollection(transType).DeleteOne(context.TODO(), filter)
 	if err != nil {
 		return err
 	}
@@ -82,23 +87,26 @@ func (t *TransactionRepository) RemoveByID(id interface{}) error {
 	return nil
 }
 
-func (t *TransactionRepository) IsUsedPartnerRefNumber(code string) bool {
+func (t *TransactionRepository) IsUsedPartnerRefNumber(code string, transType int) bool {
+
 	// filter condition
 	filter := bson.D{{"partnerRefNumber", code}}
 
 	var trans entity.BalanceTransaction
-	err := db.Mongo.Collection.BalanceTopup.FindOne(context.TODO(), filter).Decode(&trans)
+	err := getDefaultCollection(transType).FindOne(context.TODO(), filter).Decode(&trans)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return false
 		}
+		utilities.Log.Println(err.Error())
 		return true
 	}
 
 	return true
 }
 
-func (t *TransactionRepository) Update() error {
+func (t *TransactionRepository) Update(transType int) error {
+
 	update := bson.D{
 		{"$set", bson.D{
 			{"transDate", t.Model.TransDate},
@@ -109,7 +117,7 @@ func (t *TransactionRepository) Update() error {
 		}},
 	}
 
-	result, err := db.Mongo.Collection.BalanceTopup.UpdateOne(
+	result, err := getDefaultCollection(transType).UpdateOne(
 		context.TODO(),
 		bson.D{{"referenceNo", t.Model.ReferenceNo}},
 		update,

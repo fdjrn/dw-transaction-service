@@ -14,7 +14,7 @@ Service ini berfungsi untuk meng-handle transaksi saldo pengguna, seperti:
 
 ### Subscribed/Consumed Topic
     - mdw.transaction.topup.result          ✅
-    - mdw.transaction.deduct.result
+    - mdw.transaction.deduct.result         ✅
     - mdw.transaction.transfer.result
 
 ### Published/Produced Topic

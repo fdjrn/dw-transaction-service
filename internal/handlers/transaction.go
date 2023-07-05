@@ -24,9 +24,9 @@ func NewTransactionHandler() TransactionHandler {
 	return TransactionHandler{repository: repository.NewTransactionRepository()}
 }
 
-func (t *TransactionHandler) rollbackTransaction(c *fiber.Ctx, id interface{}) error {
+func (t *TransactionHandler) rollbackTransaction(c *fiber.Ctx, id interface{}, transType int) error {
 	// remove current inserted document
-	err := t.repository.RemoveByID(id)
+	err := t.repository.RemoveByID(id, transType)
 	if err != nil {
 		return c.Status(500).JSON(entity.Responses{
 			Success: false,
@@ -42,7 +42,7 @@ func (t *TransactionHandler) rollbackTransaction(c *fiber.Ctx, id interface{}) e
 	})
 }
 
-func (t *TransactionHandler) CreateTransaction(c *fiber.Ctx, transType string, isMerchant bool) error {
+func (t *TransactionHandler) CreateTransaction(c *fiber.Ctx, transType int, isMerchant bool) error {
 
 	payload := new(entity.BalanceTransaction)
 	if err := c.BodyParser(payload); err != nil {
@@ -87,12 +87,12 @@ func (t *TransactionHandler) CreateTransaction(c *fiber.Ctx, transType string, i
 		})
 	}
 
-	if transType == utilities.TransTopUp {
-		payload.ReferenceNo = str.GenerateRandomString(8, "", "")
-	} else if transType == utilities.TransPayment {
-		payload.ReferenceNo = str.GenerateRandomString(8, "PAY-", "")
-	} else if transType == utilities.TransDistribute {
-		payload.ReferenceNo = str.GenerateRandomString(8, "DST-", "")
+	if transType == utilities.TransTypeTopUp {
+		payload.ReferenceNo = str.GenerateRandomString(10, "", "")
+	} else if transType == utilities.TransTypePayment {
+		payload.ReferenceNo = str.GenerateRandomString(8, time.Now().Format("200601"), "")
+	} else if transType == utilities.TransTypeDistribution {
+		payload.ReferenceNo = str.GenerateRandomString(10, "TRF-", "")
 	}
 
 	payload.Status = utilities.TrxStatusPending
@@ -104,7 +104,7 @@ func (t *TransactionHandler) CreateTransaction(c *fiber.Ctx, transType string, i
 	t.repository.Model = payload
 
 	// 1.3 check used partnerRefNumber
-	if t.repository.IsUsedPartnerRefNumber(payload.PartnerRefNumber) {
+	if t.repository.IsUsedPartnerRefNumber(payload.PartnerRefNumber, transType) {
 		return c.Status(400).JSON(entity.Responses{
 			Success: false,
 			Message: "partnerRefNumber already exists",
@@ -113,7 +113,7 @@ func (t *TransactionHandler) CreateTransaction(c *fiber.Ctx, transType string, i
 	}
 
 	// 2. create topup trx data with default value (pending status)
-	result, err := t.repository.Create(utilities.TransTopUp)
+	result, err := t.repository.Create(transType)
 	if err != nil {
 		return c.Status(500).JSON(entity.Responses{
 			Success: false,
@@ -123,7 +123,7 @@ func (t *TransactionHandler) CreateTransaction(c *fiber.Ctx, transType string, i
 	}
 
 	// 3. produce message to kafka topic "mdw.transaction.topup.request"
-	transData, err := t.repository.FindByID(result)
+	transData, err := t.repository.FindByID(result, transType)
 	if err != nil {
 		return c.Status(500).JSON(entity.Responses{
 			Success: false,
@@ -134,27 +134,30 @@ func (t *TransactionHandler) CreateTransaction(c *fiber.Ctx, transType string, i
 
 	kMsg, _ := json.Marshal(transData)
 
-	var topicMsg string
+	var topicMsg, respMsg string
 	switch transType {
-	case utilities.TransTopUp:
+	case utilities.TransTypeTopUp:
 		topicMsg = topic.TopUpRequest
-	case utilities.TransPayment:
+		respMsg = "topup"
+	case utilities.TransTypePayment:
 		topicMsg = topic.DeductRequest
-	case utilities.TransDistribute:
+		respMsg = "payment"
+	case utilities.TransTypeDistribution:
 		topicMsg = topic.DistributionRequest
+		respMsg = "balance distribution"
 	default:
-		return t.rollbackTransaction(c, result)
+		return t.rollbackTransaction(c, result, transType)
 	}
 
 	err = kafka.ProduceMsg(topicMsg, kMsg)
 	if err != nil {
-		return t.rollbackTransaction(c, result)
+		return t.rollbackTransaction(c, result, transType)
 	}
 
 	// 4. send response http status accepted
 	return c.Status(fiber.StatusAccepted).JSON(entity.Responses{
 		Success: true,
-		Message: "topup request successfully created",
+		Message: fmt.Sprintf("%s request successful", respMsg),
 		Data:    transData,
 	})
 
@@ -162,12 +165,38 @@ func (t *TransactionHandler) CreateTransaction(c *fiber.Ctx, transType string, i
 
 func (t *TransactionHandler) Inquiry(c *fiber.Ctx) error {
 
-	trx, err := t.repository.FindByRefNo(c.Params("refNo"))
+	payload := new(entity.BalanceTransaction)
+	if err := c.BodyParser(payload); err != nil {
+		return c.Status(400).JSON(entity.Responses{
+			Success: false,
+			Message: err.Error(),
+			Data:    nil,
+		})
+	}
+
+	if payload.TransType == 0 {
+		return c.Status(400).JSON(entity.Responses{
+			Success: false,
+			Message: "invalid transType value",
+			Data:    nil,
+		})
+	}
+
+	if payload.ReferenceNo == "" {
+		return c.Status(400).JSON(entity.Responses{
+			Success: false,
+			Message: "invalid referenceNo value",
+			Data:    nil,
+		})
+	}
+
+	t.repository.Model = payload
+	err := t.repository.FindByRefNo()
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return c.Status(400).JSON(entity.Responses{
 				Success: false,
-				Message: fmt.Sprintf("cannot find transaction with current referenceNo (%s)", c.Params("refNo")),
+				Message: fmt.Sprintf("cannot find transaction with current referenceNo (%s)", payload.ReferenceNo),
 				Data:    nil,
 			})
 		}
@@ -181,7 +210,7 @@ func (t *TransactionHandler) Inquiry(c *fiber.Ctx) error {
 
 	return c.Status(200).JSON(entity.Responses{
 		Success: true,
-		Message: "transaction inquiry status successfully fetched",
-		Data:    trx,
+		Message: fmt.Sprintf("transaction successfully fetched with status: %s", t.repository.Model.Status),
+		Data:    t.repository.Model,
 	})
 }

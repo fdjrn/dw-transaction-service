@@ -2,6 +2,7 @@ package consumer
 
 import (
 	"encoding/json"
+	"errors"
 	"github.com/Shopify/sarama"
 	"github.com/fdjrn/dw-transaction-service/internal/db/entity"
 	"github.com/fdjrn/dw-transaction-service/internal/db/repository"
@@ -25,9 +26,12 @@ func (t *TransactionHandler) HandleTransactionResult(message *sarama.ConsumerMes
 		return nil, err
 	}
 
-	// TODO: update transaction status by transaction refNo
+	if data == nil {
+		return nil, errors.New("empty message value")
+	}
+
 	t.transactionRepository.Model = data
-	err = t.transactionRepository.Update()
+	err = t.transactionRepository.Update(data.TransType)
 	if err != nil {
 		//utilities.Log.Println("| unable to update transaction status, err: ", err.Error())
 		return nil, err

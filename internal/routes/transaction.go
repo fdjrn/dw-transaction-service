@@ -11,20 +11,20 @@ func initTransactionRoutes(router fiber.Router) {
 	h := handlers.NewTransactionHandler()
 
 	r.Post("/topup", func(c *fiber.Ctx) error {
-		return h.CreateTransaction(c, utilities.TransTopUp, false)
+		return h.CreateTransaction(c, utilities.TransTypeTopUp, false)
 	})
 
 	r.Post("/deduct", func(c *fiber.Ctx) error {
-		return h.CreateTransaction(c, utilities.TransPayment, false)
+		return h.CreateTransaction(c, utilities.TransTypePayment, false)
 	})
 
 	// ------------ MERCHANT ------------
 	r.Post("/merchant/topup", func(c *fiber.Ctx) error {
-		return h.CreateTransaction(c, utilities.TransTopUp, true)
+		return h.CreateTransaction(c, utilities.TransTypeTopUp, true)
 	})
 
 	r.Post("/merchant/deduct", func(c *fiber.Ctx) error {
-		return h.CreateTransaction(c, utilities.TransPayment, true)
+		return h.CreateTransaction(c, utilities.TransTypePayment, true)
 	})
 
 	r.Post("/merchant/distribute", func(c *fiber.Ctx) error {
@@ -33,8 +33,7 @@ func initTransactionRoutes(router fiber.Router) {
 	})
 
 	// ------------ UTILITIES ------------
-	r.Get("/inquiry/:refNo", func(c *fiber.Ctx) error {
-		//TODO
+	r.Post("/inquiry", func(c *fiber.Ctx) error {
 		return h.Inquiry(c)
 	})
 
