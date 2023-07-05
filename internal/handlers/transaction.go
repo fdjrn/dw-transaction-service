@@ -87,7 +87,14 @@ func (t *TransactionHandler) CreateTransaction(c *fiber.Ctx, transType string, i
 		})
 	}
 
-	payload.ReferenceNo = str.GenerateRandomString(8, "", "")
+	if transType == utilities.TransTopUp {
+		payload.ReferenceNo = str.GenerateRandomString(8, "", "")
+	} else if transType == utilities.TransPayment {
+		payload.ReferenceNo = str.GenerateRandomString(8, "PAY-", "")
+	} else if transType == utilities.TransDistribute {
+		payload.ReferenceNo = str.GenerateRandomString(8, "DST-", "")
+	}
+
 	payload.Status = utilities.TrxStatusPending
 	payload.TransType = transType
 	tStamp := time.Now().UnixMilli()
@@ -151,10 +158,6 @@ func (t *TransactionHandler) CreateTransaction(c *fiber.Ctx, transType string, i
 		Data:    transData,
 	})
 
-}
-
-func (t *TransactionHandler) DeductBalance(c *fiber.Ctx, isMerchant bool) error {
-	return nil
 }
 
 func (t *TransactionHandler) Inquiry(c *fiber.Ctx) error {

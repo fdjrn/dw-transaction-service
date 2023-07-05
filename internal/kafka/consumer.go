@@ -136,13 +136,12 @@ func HandleMessages(message *sarama.ConsumerMessage) {
 	utilities.Log.SetPrefix("[CONSUMER] ")
 
 	switch message.Topic {
-	case topic.TopUpResult:
-		trx, err = handler.DoHandleTopupResultTransaction(message)
+	case topic.TopUpResult, topic.DeductResult:
+		trx, err = handler.HandleTransactionResult(message)
 		if err != nil {
 			utilities.Log.Println("| failed to process consumed message for topic: ", message.Topic, ", with err: ", err.Error())
-			//return
 		} else {
-			utilities.Log.Printf("| topup with RefNo: %s, has been successfully updated\n", trx.ReferenceNo)
+			utilities.Log.Printf("| transaction with RefNo: %s, has been successfully updated\n", trx.ReferenceNo)
 		}
 
 	default:

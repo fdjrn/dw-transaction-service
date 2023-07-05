@@ -17,7 +17,7 @@ func NewTransactionHandler() TransactionHandler {
 	}
 }
 
-func (t *TransactionHandler) DoHandleTopupResultTransaction(message *sarama.ConsumerMessage) (*entity.BalanceTransaction, error) {
+func (t *TransactionHandler) HandleTransactionResult(message *sarama.ConsumerMessage) (*entity.BalanceTransaction, error) {
 
 	data := new(entity.BalanceTransaction)
 	err := json.Unmarshal(message.Value, &data)
