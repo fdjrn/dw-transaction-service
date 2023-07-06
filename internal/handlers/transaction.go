@@ -72,6 +72,16 @@ func (t *TransactionHandler) CreateTransaction(c *fiber.Ctx, transType int, isMe
 	// 1.1 validate voucher code
 	// --- skip dulu 2023-06-26 -----
 
+	// validate partnerTransDate
+	_, err = time.Parse("20060102150405", payload.PartnerTransDate)
+	if err != nil {
+		return c.Status(400).JSON(entity.Responses{
+			Success: false,
+			Message: "invalid partnerTransDate format. accepted format are 'YYYYMMDDhhmmss'",
+			Data:    nil,
+		})
+	}
+
 	// 1.2 check total amount == items amount
 	tmpTotalAmt := int64(0)
 	for _, item := range payload.Items {
