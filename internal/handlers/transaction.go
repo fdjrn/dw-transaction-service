@@ -224,3 +224,197 @@ func (t *TransactionHandler) Inquiry(c *fiber.Ctx) error {
 		Data:    t.repository.Model,
 	})
 }
+
+func (t *TransactionHandler) TransactionSummary(c *fiber.Ctx) error {
+	payload := new(entity.BalanceTransaction)
+	if err := c.BodyParser(payload); err != nil {
+		return c.Status(400).JSON(entity.Responses{
+			Success: false,
+			Message: err.Error(),
+			Data:    nil,
+		})
+	}
+
+	if payload.PartnerID == "" {
+		return c.Status(400).JSON(entity.Responses{
+			Success: false,
+			Message: "invalid partnerId value",
+			Data:    nil,
+		})
+	}
+
+	if payload.MerchantID == "" {
+		return c.Status(400).JSON(entity.Responses{
+			Success: false,
+			Message: "invalid merchantId value",
+			Data:    nil,
+		})
+	}
+
+	payload.Status = utilities.TrxStatusSuccess
+
+	var result = new(entity.TransactionSummary)
+	result.PartnerID = payload.PartnerID
+	result.MerchantID = payload.MerchantID
+
+	t.repository.Model = payload
+	t.repository.Model.TransType = utilities.TransTypeTopUp
+	summary, err := t.repository.GetTransactionSummary()
+	if err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return c.Status(500).JSON(entity.Responses{
+				Success: false,
+				Message: fmt.Sprintf("cannot found account with current partnerId: [%s] and merchantId: [%s]",
+					payload.PartnerID, payload.MerchantID),
+				Data: nil,
+			})
+		}
+
+		return c.Status(500).JSON(entity.Responses{
+			Success: false,
+			Message: fmt.Sprintf("err on summarize total credit, with err: %s", err.Error()),
+			Data:    nil,
+		})
+	}
+
+	result.TotalCredit = summary
+
+	t.repository.Model.TransType = utilities.TransTypePayment
+	summary, err = t.repository.GetTransactionSummary()
+	if err != nil {
+		return c.Status(500).JSON(entity.Responses{
+			Success: false,
+			Message: fmt.Sprintf("err on summarize total debit, with err: %s", err.Error()),
+			Data:    nil,
+		})
+	}
+	result.TotalDebit = summary
+
+	return c.Status(200).JSON(entity.Responses{
+		Success: true,
+		Message: "transaction summary successfully fetched",
+		Data:    result,
+	})
+}
+
+func (t *TransactionHandler) TransactionSummaryTopup(c *fiber.Ctx) error {
+	payload := new(entity.BalanceTransaction)
+	if err := c.BodyParser(payload); err != nil {
+		return c.Status(400).JSON(entity.Responses{
+			Success: false,
+			Message: err.Error(),
+			Data:    nil,
+		})
+	}
+
+	if payload.PartnerID == "" {
+		return c.Status(400).JSON(entity.Responses{
+			Success: false,
+			Message: "invalid partnerId value",
+			Data:    nil,
+		})
+	}
+
+	if payload.MerchantID == "" {
+		return c.Status(400).JSON(entity.Responses{
+			Success: false,
+			Message: "invalid merchantId value",
+			Data:    nil,
+		})
+	}
+
+	payload.Status = utilities.TrxStatusSuccess
+
+	var result = new(entity.TransactionSummaryTopup)
+	result.PartnerID = payload.PartnerID
+	result.MerchantID = payload.MerchantID
+
+	t.repository.Model = payload
+	t.repository.Model.TransType = utilities.TransTypeTopUp
+	summary, err := t.repository.GetTransactionSummary()
+	if err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return c.Status(500).JSON(entity.Responses{
+				Success: false,
+				Message: fmt.Sprintf("cannot found account with current partnerId: [%s] and merchantId: [%s]",
+					payload.PartnerID, payload.MerchantID),
+				Data: nil,
+			})
+		}
+
+		return c.Status(500).JSON(entity.Responses{
+			Success: false,
+			Message: fmt.Sprintf("err on summarize total credit, with err: %s", err.Error()),
+			Data:    nil,
+		})
+	}
+
+	result.TotalCredit = summary
+
+	return c.Status(200).JSON(entity.Responses{
+		Success: true,
+		Message: "topup transaction summary successfully fetched",
+		Data:    result,
+	})
+}
+
+func (t *TransactionHandler) TransactionSummaryDeduct(c *fiber.Ctx) error {
+	payload := new(entity.BalanceTransaction)
+	if err := c.BodyParser(payload); err != nil {
+		return c.Status(400).JSON(entity.Responses{
+			Success: false,
+			Message: err.Error(),
+			Data:    nil,
+		})
+	}
+
+	if payload.PartnerID == "" {
+		return c.Status(400).JSON(entity.Responses{
+			Success: false,
+			Message: "invalid partnerId value",
+			Data:    nil,
+		})
+	}
+
+	if payload.MerchantID == "" {
+		return c.Status(400).JSON(entity.Responses{
+			Success: false,
+			Message: "invalid merchantId value",
+			Data:    nil,
+		})
+	}
+
+	payload.Status = utilities.TrxStatusSuccess
+
+	var result = new(entity.TransactionSummaryDeduct)
+	result.PartnerID = payload.PartnerID
+	result.MerchantID = payload.MerchantID
+
+	t.repository.Model = payload
+	t.repository.Model.TransType = utilities.TransTypePayment
+	summary, err := t.repository.GetTransactionSummary()
+	if err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return c.Status(500).JSON(entity.Responses{
+				Success: false,
+				Message: fmt.Sprintf("cannot found account with current partnerId: [%s] and merchantId: [%s]",
+					payload.PartnerID, payload.MerchantID),
+				Data: nil,
+			})
+		}
+
+		return c.Status(500).JSON(entity.Responses{
+			Success: false,
+			Message: fmt.Sprintf("err on summarize total debit, with err: %s", err.Error()),
+			Data:    nil,
+		})
+	}
+
+	result.TotalDebit = summary
+
+	return c.Status(200).JSON(entity.Responses{
+		Success: true,
+		Message: "deduct transaction summary successfully fetched",
+		Data:    result,
+	})
+}

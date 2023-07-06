@@ -37,4 +37,16 @@ func initTransactionRoutes(router fiber.Router) {
 		return h.Inquiry(c)
 	})
 
+	r.Post("/summary", func(c *fiber.Ctx) error {
+		return h.TransactionSummary(c)
+	})
+
+	r.Post("/summary/topup", func(c *fiber.Ctx) error {
+		return h.TransactionSummaryTopup(c)
+	})
+
+	r.Post("/summary/deduct", func(c *fiber.Ctx) error {
+		return h.TransactionSummaryDeduct(c)
+	})
+
 }

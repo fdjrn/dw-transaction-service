@@ -28,3 +28,23 @@ type BalanceTransaction struct {
 	CreatedAt        int64             `json:"createdAt,omitempty" bson:"createdAt,omitempty"`
 	UpdatedAt        int64             `json:"updatedAt,omitempty" bson:"updatedAt,omitempty"`
 }
+
+type TransactionSummary struct {
+	PartnerID   string `json:"partnerId" bson:"partnerId"`
+	MerchantID  string `json:"merchantId" bson:"merchantId"`
+	Total       int64  `json:"-" bson:"total"`
+	TotalCredit int64  `json:"totalCredit" bson:"-"`
+	TotalDebit  int64  `json:"totalDebit" bson:"-"`
+}
+
+type TransactionSummaryTopup struct {
+	PartnerID   string `json:"partnerId" bson:"partnerId"`
+	MerchantID  string `json:"merchantId" bson:"merchantId"`
+	TotalCredit int64  `json:"totalCredit" bson:"-"`
+}
+
+type TransactionSummaryDeduct struct {
+	PartnerID  string `json:"partnerId" bson:"partnerId"`
+	MerchantID string `json:"merchantId" bson:"merchantId"`
+	TotalDebit int64  `json:"totalDebit" bson:"-"`
+}

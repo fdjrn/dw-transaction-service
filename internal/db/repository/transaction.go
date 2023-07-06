@@ -8,7 +8,9 @@ import (
 	"github.com/fdjrn/dw-transaction-service/internal/db/entity"
 	"github.com/fdjrn/dw-transaction-service/internal/utilities"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"log"
 	"time"
 )
 
@@ -132,4 +134,63 @@ func (t *TransactionRepository) Update(transType int) error {
 	}
 
 	return nil
+}
+
+func (t *TransactionRepository) GetTransactionSummary() (int64, error) {
+	matchStages := bson.D{
+		{"$match", bson.D{
+			{"partnerId", t.Model.PartnerID},
+			{"merchantId", t.Model.MerchantID},
+			{"terminalId", t.Model.TerminalID},
+			{"status", t.Model.Status},
+		}},
+	}
+
+	groupStages := bson.D{
+		{"$group", bson.D{
+			//{"_id", bson.D{
+			//	{"partnerId", "$partnerId"},
+			//	{"merchantId", "$merchantId"},
+			//}},
+			{"_id", primitive.Null{}},
+			{"total", bson.D{{"$sum", "$totalAmount"}}},
+		}},
+	}
+
+	projectStages := bson.D{
+		{"$project", bson.D{
+			{"_id", 0},
+			//{"partnerId", "$_id.partnerId"},
+			//{"merchantId", "$_id.merchantId"},
+			{"total", 1},
+		}},
+	}
+
+	cursor, err := getDefaultCollection(t.Model.TransType).Aggregate(
+		context.TODO(),
+		mongo.Pipeline{
+			matchStages,
+			groupStages,
+			projectStages,
+		})
+
+	if err != nil {
+		return 0, err
+	}
+
+	var summary map[string]interface{}
+	for cursor.Next(context.TODO()) {
+		err = cursor.Decode(&summary)
+		if err != nil {
+			log.Println("error found on decoding cursor: ", err.Error())
+			continue
+		}
+	}
+
+	if summary == nil {
+		return 0, mongo.ErrNoDocuments
+	}
+
+	return summary["total"].(int64), nil
+
 }
