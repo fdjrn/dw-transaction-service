@@ -13,19 +13,21 @@ Service ini berfungsi untuk meng-handle transaksi saldo pengguna, seperti:
     - RestAPI endpoint
 
 ### Subscribed/Consumed Topic
-    - mdw.transaction.topup.result          ✅
-    - mdw.transaction.deduct.result         ✅
+    - mdw.transaction.topup.result              ✅
+    - mdw.transaction.deduct.result             ✅
     - mdw.transaction.transfer.result
 
 ### Published/Produced Topic
-    - mdw.transaction.topup.request         ✅
-    - mdw.transaction.deduct.request        ✅
+    - mdw.transaction.topup.request             ✅
+    - mdw.transaction.deduct.request            ✅
     - mdw.transaction.transfer.request
     
 
 ### RESTFul API Endpoint
-    - POST /api/v1/transaction/topup        ✅
-    - POST /api/v1/transaction/deduct       ✅
+    - POST /api/v1/transaction/topup            ✅
+    - POST /api/v1/transaction/deduct           ✅
     - POST /api/v1/transaction/distribute
-    - POST /api/v1/transaction/inquiry      ✅
+    - POST /api/v1/transaction/inquiry          ✅
     - POST /api/v1/transaction/summary
+    - POST /api/v1/transaction/summary/topup    ✅
+    - POST /api/v1/transaction/summary/deduct   ✅
