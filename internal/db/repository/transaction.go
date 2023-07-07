@@ -112,6 +112,7 @@ func (t *TransactionRepository) Update(transType int) error {
 	update := bson.D{
 		{"$set", bson.D{
 			{"transDate", t.Model.TransDate},
+			{"transDateNumeric", t.Model.TransDateNumeric},
 			{"receiptNumber", t.Model.ReceiptNumber},
 			{"status", t.Model.Status},
 			{"lastBalance", t.Model.LastBalance},
