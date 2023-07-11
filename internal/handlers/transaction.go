@@ -97,12 +97,15 @@ func (t *TransactionHandler) CreateTransaction(c *fiber.Ctx, transType int, isMe
 		})
 	}
 
-	if transType == utilities.TransTypeTopUp {
+	switch transType {
+	case utilities.TransTypeTopUp:
 		payload.ReferenceNo = str.GenerateRandomString(10, "", "")
-	} else if transType == utilities.TransTypePayment {
+	case utilities.TransTypePayment:
 		payload.ReferenceNo = str.GenerateRandomString(8, time.Now().Format("200601"), "")
-	} else if transType == utilities.TransTypeDistribution {
+	case utilities.TransTypeDistribution:
 		payload.ReferenceNo = str.GenerateRandomString(10, "TRF-", "")
+	default:
+		payload.ReferenceNo = "-"
 	}
 
 	payload.Status = utilities.TrxStatusPending
@@ -225,9 +228,14 @@ func (t *TransactionHandler) Inquiry(c *fiber.Ctx) error {
 	})
 }
 
-func (t *TransactionHandler) TransactionSummary(c *fiber.Ctx) error {
-	payload := new(entity.BalanceTransaction)
-	if err := c.BodyParser(payload); err != nil {
+func (t *TransactionHandler) TransactionSummary(c *fiber.Ctx, isPeriod bool) error {
+	var (
+		err     error
+		payload = new(entity.BalanceTransaction)
+		result  = new(entity.TransactionSummary)
+	)
+
+	if err = c.BodyParser(payload); err != nil {
 		return c.Status(400).JSON(entity.Responses{
 			Success: false,
 			Message: err.Error(),
@@ -251,42 +259,70 @@ func (t *TransactionHandler) TransactionSummary(c *fiber.Ctx) error {
 		})
 	}
 
+	if isPeriod {
+		payload.Periods.StartDate, err = time.ParseInLocation(
+			"20060102150405",
+			fmt.Sprintf("%s%s", payload.Periods.Start, "000000"),
+			time.Now().Location(),
+		)
+		if err != nil {
+			return c.Status(400).JSON(entity.Responses{
+				Success: false,
+				Message: "invalid start periods",
+				Data:    nil,
+			})
+		}
+
+		payload.Periods.EndDate, err = time.ParseInLocation(
+			"20060102150405",
+			fmt.Sprintf("%s%s", payload.Periods.End, "235959"),
+			time.Now().Location(),
+		)
+
+		if err != nil {
+			return c.Status(400).JSON(entity.Responses{
+				Success: false,
+				Message: "invalid end periods",
+				Data:    nil,
+			})
+		}
+	}
+
 	payload.Status = utilities.TrxStatusSuccess
 
-	var result = new(entity.TransactionSummary)
+	// populate result data.
 	result.PartnerID = payload.PartnerID
 	result.MerchantID = payload.MerchantID
 
 	t.repository.Model = payload
 	t.repository.Model.TransType = utilities.TransTypeTopUp
-	summary, err := t.repository.GetTransactionSummary()
+	summary, err := t.repository.GetTransactionSummary(isPeriod)
 	if err != nil {
-		if errors.Is(err, mongo.ErrNoDocuments) {
+		if !errors.Is(err, mongo.ErrNoDocuments) {
 			return c.Status(500).JSON(entity.Responses{
 				Success: false,
-				Message: fmt.Sprintf("cannot found account with current partnerId: [%s] and merchantId: [%s]",
-					payload.PartnerID, payload.MerchantID),
-				Data: nil,
+				Message: fmt.Sprintf("err on summarize total credit, with err: %s", err.Error()),
+				Data:    nil,
 			})
-		}
 
-		return c.Status(500).JSON(entity.Responses{
-			Success: false,
-			Message: fmt.Sprintf("err on summarize total credit, with err: %s", err.Error()),
-			Data:    nil,
-		})
+		}
+		//summary = 0
 	}
 
 	result.TotalCredit = summary
 
 	t.repository.Model.TransType = utilities.TransTypePayment
-	summary, err = t.repository.GetTransactionSummary()
+	summary, err = t.repository.GetTransactionSummary(isPeriod)
 	if err != nil {
-		return c.Status(500).JSON(entity.Responses{
-			Success: false,
-			Message: fmt.Sprintf("err on summarize total debit, with err: %s", err.Error()),
-			Data:    nil,
-		})
+		if !errors.Is(err, mongo.ErrNoDocuments) {
+			return c.Status(500).JSON(entity.Responses{
+				Success: false,
+				Message: fmt.Sprintf("err on summarize total debit, with err: %s", err.Error()),
+				Data:    nil,
+			})
+		}
+
+		//summary = 0
 	}
 	result.TotalDebit = summary
 
@@ -297,9 +333,14 @@ func (t *TransactionHandler) TransactionSummary(c *fiber.Ctx) error {
 	})
 }
 
-func (t *TransactionHandler) TransactionSummaryTopup(c *fiber.Ctx) error {
-	payload := new(entity.BalanceTransaction)
-	if err := c.BodyParser(payload); err != nil {
+func (t *TransactionHandler) TransactionSummaryTopup(c *fiber.Ctx, isPeriod bool) error {
+	var (
+		err     error
+		payload = new(entity.BalanceTransaction)
+		result  = new(entity.TransactionSummaryTopup)
+	)
+
+	if err = c.BodyParser(payload); err != nil {
 		return c.Status(400).JSON(entity.Responses{
 			Success: false,
 			Message: err.Error(),
@@ -323,23 +364,63 @@ func (t *TransactionHandler) TransactionSummaryTopup(c *fiber.Ctx) error {
 		})
 	}
 
+	if isPeriod {
+		payload.Periods.StartDate, err = time.ParseInLocation(
+			"20060102150405",
+			fmt.Sprintf("%s%s", payload.Periods.Start, "000000"),
+			time.Now().Location(),
+		)
+		if err != nil {
+			return c.Status(400).JSON(entity.Responses{
+				Success: false,
+				Message: "invalid start periods",
+				Data:    nil,
+			})
+		}
+
+		payload.Periods.EndDate, err = time.ParseInLocation(
+			"20060102150405",
+			fmt.Sprintf("%s%s", payload.Periods.End, "235959"),
+			time.Now().Location(),
+		)
+
+		if err != nil {
+			return c.Status(400).JSON(entity.Responses{
+				Success: false,
+				Message: "invalid end periods",
+				Data:    nil,
+			})
+		}
+	}
+
+	utilities.Log.Println("start date: ", payload.Periods.StartDate)
+	utilities.Log.Println("end date: ", payload.Periods.EndDate)
+
 	payload.Status = utilities.TrxStatusSuccess
 
-	var result = new(entity.TransactionSummaryTopup)
+	// populate result data.
 	result.PartnerID = payload.PartnerID
 	result.MerchantID = payload.MerchantID
 
 	t.repository.Model = payload
 	t.repository.Model.TransType = utilities.TransTypeTopUp
-	summary, err := t.repository.GetTransactionSummary()
+	summary, err := t.repository.GetTransactionSummary(isPeriod)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
+			errMsg := fmt.Sprintf("transaction (topup) not found.")
+
+			if isPeriod {
+				errMsg = fmt.Sprintf(
+					"transaction (topup) not found for current period %s - %s",
+					payload.Periods.Start, payload.Periods.End)
+			}
+
 			return c.Status(500).JSON(entity.Responses{
 				Success: false,
-				Message: fmt.Sprintf("cannot found account with current partnerId: [%s] and merchantId: [%s]",
-					payload.PartnerID, payload.MerchantID),
-				Data: nil,
+				Message: errMsg,
+				Data:    nil,
 			})
+
 		}
 
 		return c.Status(500).JSON(entity.Responses{
@@ -358,7 +439,9 @@ func (t *TransactionHandler) TransactionSummaryTopup(c *fiber.Ctx) error {
 	})
 }
 
-func (t *TransactionHandler) TransactionSummaryDeduct(c *fiber.Ctx) error {
+func (t *TransactionHandler) TransactionSummaryDeduct(c *fiber.Ctx, isPeriod bool) error {
+	var err error
+
 	payload := new(entity.BalanceTransaction)
 	if err := c.BodyParser(payload); err != nil {
 		return c.Status(400).JSON(entity.Responses{
@@ -384,6 +467,35 @@ func (t *TransactionHandler) TransactionSummaryDeduct(c *fiber.Ctx) error {
 		})
 	}
 
+	if isPeriod {
+		payload.Periods.StartDate, err = time.ParseInLocation(
+			"20060102150405",
+			fmt.Sprintf("%s%s", payload.Periods.Start, "000000"),
+			time.Now().Location(),
+		)
+		if err != nil {
+			return c.Status(400).JSON(entity.Responses{
+				Success: false,
+				Message: "invalid start periods",
+				Data:    nil,
+			})
+		}
+
+		payload.Periods.EndDate, err = time.ParseInLocation(
+			"20060102150405",
+			fmt.Sprintf("%s%s", payload.Periods.End, "235959"),
+			time.Now().Location(),
+		)
+
+		if err != nil {
+			return c.Status(400).JSON(entity.Responses{
+				Success: false,
+				Message: "invalid end periods",
+				Data:    nil,
+			})
+		}
+	}
+
 	payload.Status = utilities.TrxStatusSuccess
 
 	var result = new(entity.TransactionSummaryDeduct)
@@ -392,14 +504,21 @@ func (t *TransactionHandler) TransactionSummaryDeduct(c *fiber.Ctx) error {
 
 	t.repository.Model = payload
 	t.repository.Model.TransType = utilities.TransTypePayment
-	summary, err := t.repository.GetTransactionSummary()
+	summary, err := t.repository.GetTransactionSummary(isPeriod)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
+			errMsg := fmt.Sprintf("transaction (deduct) not found.")
+
+			if isPeriod {
+				errMsg = fmt.Sprintf(
+					"transaction (deduct) not found for current period %s - %s",
+					payload.Periods.Start, payload.Periods.End)
+			}
+
 			return c.Status(500).JSON(entity.Responses{
 				Success: false,
-				Message: fmt.Sprintf("cannot found account with current partnerId: [%s] and merchantId: [%s]",
-					payload.PartnerID, payload.MerchantID),
-				Data: nil,
+				Message: errMsg,
+				Data:    nil,
 			})
 		}
 

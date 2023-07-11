@@ -144,12 +144,11 @@ func HandleMessages(message *sarama.ConsumerMessage) {
 		}
 
 		utilities.Log.Printf("| transaction with RefNo: %s, has been successfully updated\n", trx.ReferenceNo)
+
 		// TODO: hit api callback (MDL)
 		utilities.Log.Printf("| TODO next step is call Callback Endpoint from MDL")
-		return
 	default:
 		utilities.Log.Println("| Unknown topic message")
-		return
 	}
 
 }

@@ -1,5 +1,7 @@
 package entity
 
+import "time"
+
 type TransactionItem struct {
 	ID     string `json:"id,omitempty" bson:"_id,omitempty"`
 	Code   string `json:"code,omitempty" bson:"code"`
@@ -28,6 +30,7 @@ type BalanceTransaction struct {
 	Items            []TransactionItem `json:"items" bson:"items"`
 	CreatedAt        int64             `json:"createdAt,omitempty" bson:"createdAt,omitempty"`
 	UpdatedAt        int64             `json:"updatedAt,omitempty" bson:"updatedAt,omitempty"`
+	Periods          PeriodsRequest    `json:"periods,omitempty" bson:"-"`
 }
 
 type TransactionSummary struct {
@@ -48,4 +51,11 @@ type TransactionSummaryDeduct struct {
 	PartnerID  string `json:"partnerId" bson:"partnerId"`
 	MerchantID string `json:"merchantId" bson:"merchantId"`
 	TotalDebit int64  `json:"totalDebit" bson:"-"`
+}
+
+type PeriodsRequest struct {
+	Start     string    `json:"start,omitempty" bson:"-"`
+	StartDate time.Time `json:"-" bson:"-"`
+	End       string    `json:"end,omitempty" bson:"-"`
+	EndDate   time.Time `json:"-" bson:"-"`
 }

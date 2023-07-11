@@ -33,7 +33,6 @@ func (t *TransactionHandler) HandleTransactionResult(message *sarama.ConsumerMes
 	t.transactionRepository.Model = data
 	err = t.transactionRepository.Update(data.TransType)
 	if err != nil {
-		//utilities.Log.Println("| unable to update transaction status, err: ", err.Error())
 		return nil, err
 	}
 

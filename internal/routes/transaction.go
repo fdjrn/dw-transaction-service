@@ -38,15 +38,27 @@ func initTransactionRoutes(router fiber.Router) {
 	})
 
 	r.Post("/summary", func(c *fiber.Ctx) error {
-		return h.TransactionSummary(c)
+		return h.TransactionSummary(c, false)
+	})
+
+	r.Post("/summary/period", func(c *fiber.Ctx) error {
+		return h.TransactionSummary(c, true)
 	})
 
 	r.Post("/summary/topup", func(c *fiber.Ctx) error {
-		return h.TransactionSummaryTopup(c)
+		return h.TransactionSummaryTopup(c, false)
+	})
+
+	r.Post("/summary/topup/period", func(c *fiber.Ctx) error {
+		return h.TransactionSummaryTopup(c, true)
 	})
 
 	r.Post("/summary/deduct", func(c *fiber.Ctx) error {
-		return h.TransactionSummaryDeduct(c)
+		return h.TransactionSummaryDeduct(c, false)
+	})
+
+	r.Post("/summary/deduct/period", func(c *fiber.Ctx) error {
+		return h.TransactionSummaryDeduct(c, true)
 	})
 
 }

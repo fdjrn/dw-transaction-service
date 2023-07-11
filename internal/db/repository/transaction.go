@@ -137,14 +137,26 @@ func (t *TransactionRepository) Update(transType int) error {
 	return nil
 }
 
-func (t *TransactionRepository) GetTransactionSummary() (int64, error) {
+func (t *TransactionRepository) GetTransactionSummary(isPeriod bool) (int64, error) {
+
+	filterData := bson.D{
+		{"partnerId", t.Model.PartnerID},
+		{"merchantId", t.Model.MerchantID},
+		{"terminalId", t.Model.TerminalID},
+		{"status", t.Model.Status},
+	}
+
+	if isPeriod {
+		filterData = append(filterData, bson.D{
+			{"transDateNumeric", bson.D{
+				{"$gte", t.Model.Periods.StartDate.UnixMilli()},
+				{"$lte", t.Model.Periods.EndDate.UnixMilli()},
+			}},
+		}...)
+	}
+
 	matchStages := bson.D{
-		{"$match", bson.D{
-			{"partnerId", t.Model.PartnerID},
-			{"merchantId", t.Model.MerchantID},
-			{"terminalId", t.Model.TerminalID},
-			{"status", t.Model.Status},
-		}},
+		{"$match", filterData},
 	}
 
 	groupStages := bson.D{
@@ -167,8 +179,11 @@ func (t *TransactionRepository) GetTransactionSummary() (int64, error) {
 		}},
 	}
 
+	ctx, cancel := context.WithTimeout(context.TODO(), 2*time.Second)
+	defer cancel()
+
 	cursor, err := getDefaultCollection(t.Model.TransType).Aggregate(
-		context.TODO(),
+		ctx,
 		mongo.Pipeline{
 			matchStages,
 			groupStages,
@@ -183,7 +198,7 @@ func (t *TransactionRepository) GetTransactionSummary() (int64, error) {
 	for cursor.Next(context.TODO()) {
 		err = cursor.Decode(&summary)
 		if err != nil {
-			log.Println("error found on decoding cursor: ", err.Error())
+			log.Println("error found on cursor decode: ", err.Error())
 			continue
 		}
 	}
