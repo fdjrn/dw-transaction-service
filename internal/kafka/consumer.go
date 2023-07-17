@@ -145,8 +145,22 @@ func HandleMessages(message *sarama.ConsumerMessage) {
 
 		utilities.Log.Printf("| transaction with RefNo: %s, has been successfully updated\n", trx.ReferenceNo)
 
-		// TODO: hit api callback (MDL)
-		utilities.Log.Printf("| TODO next step is call Callback Endpoint from MDL")
+		// send callback transaction
+		err = handler.SendCallback(trx)
+		if err != nil {
+			utilities.Log.Println(err.Error())
+
+			// change status to TrxStatusCallbackFailed ("07")
+			err = handler.HandleCallbackFailed(trx)
+			if err != nil {
+				utilities.Log.Println("| failed to change transaction status on callback failure: ", err.Error())
+				return
+			}
+
+			return
+		}
+		utilities.Log.Printf("| transaction with RefNo: %s, has been successfully send to callback endpoint\n", trx.ReferenceNo)
+
 	default:
 		utilities.Log.Println("| Unknown topic message")
 	}

@@ -27,10 +27,11 @@ type BalanceTransaction struct {
 	TerminalID       string            `json:"terminalId" bson:"terminalId"`
 	TerminalName     string            `json:"terminalName" bson:"terminalName"`
 	TotalAmount      int64             `json:"totalAmount" bson:"totalAmount"`
+	TransferAmount   int64             `json:"transferAmount,omitempty" bson:"-"`
 	Items            []TransactionItem `json:"items" bson:"items"`
 	CreatedAt        int64             `json:"createdAt,omitempty" bson:"createdAt,omitempty"`
 	UpdatedAt        int64             `json:"updatedAt,omitempty" bson:"updatedAt,omitempty"`
-	Periods          PeriodsRequest    `json:"periods,omitempty" bson:"-"`
+	Periods          *PeriodsRequest   `json:"periods,omitempty" bson:"-"`
 }
 
 type TransactionSummary struct {
@@ -58,4 +59,10 @@ type PeriodsRequest struct {
 	StartDate time.Time `json:"-" bson:"-"`
 	End       string    `json:"end,omitempty" bson:"-"`
 	EndDate   time.Time `json:"-" bson:"-"`
+}
+
+type CallBackResponseAPI struct {
+	Success    bool   `json:"success"`
+	Message    string `json:"message"`
+	StatusCode int    `json:"status_code"`
 }

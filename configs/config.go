@@ -56,16 +56,26 @@ type KafkaConfig struct {
 	Consumer KafkaConsumerConfig `mapstructure:"consumer"`
 }
 
+type CallBackEndpoint struct {
+	MDLTransaction string `mapstructure:"mdlTransaction"`
+	MDLSecret      string `mapstructure:"mdlSecret"`
+}
+
+type ExternalResources struct {
+	CallBackAPI CallBackEndpoint `mapstructure:"callbackApi"`
+}
+
 type AppConfig struct {
 	AppName   string `mapstructure:"appName"`
 	DebugMode bool   `mapstructure:"debugMode"`
 	// os | file
-	LogOutput          string       `mapstructure:"logOutput"`
-	LogPath            string       `mapstructure:"logPath"`
-	VerboseAPIResponse bool         `mapstructure:"verboseApiResponse"`
-	APIServer          ServerConfig `mapstructure:"server"`
-	Database           DBConfig     `mapstructure:"database"`
-	Kafka              KafkaConfig  `mapstructure:"kafka"`
+	LogOutput          string            `mapstructure:"logOutput"`
+	LogPath            string            `mapstructure:"logPath"`
+	VerboseAPIResponse bool              `mapstructure:"verboseApiResponse"`
+	APIServer          ServerConfig      `mapstructure:"server"`
+	Database           DBConfig          `mapstructure:"database"`
+	Kafka              KafkaConfig       `mapstructure:"kafka"`
+	ExternalResource   ExternalResources `mapstructure:"externalResource"`
 }
 
 var MainConfig AppConfig

@@ -14,4 +14,5 @@ const (
 	TrxStatusInvalidAccount   = "04"
 	TrxStatusFailed           = "05"
 	TrxStatusInsufficientFund = "06"
+	TrxStatusCallbackFailed   = "07"
 )

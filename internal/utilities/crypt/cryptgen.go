@@ -2,7 +2,9 @@ package crypt
 
 import (
 	"crypto/aes"
+	"crypto/hmac"
 	"crypto/rand"
+	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
 	"strconv"
@@ -56,4 +58,12 @@ func DecryptAndConvert(key []byte, ct string) (int, error) {
 		return 0, err
 	}
 	return result, err
+}
+
+func CreateNewHMAC(secret string, data []byte) string {
+	var secretKey = []byte(secret)
+	h := hmac.New(sha256.New, secretKey)
+	h.Write(data)
+
+	return hex.EncodeToString(h.Sum(nil))
 }

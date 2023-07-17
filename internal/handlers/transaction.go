@@ -72,6 +72,15 @@ func (t *TransactionHandler) CreateTransaction(c *fiber.Ctx, transType int, isMe
 	// 1.1 validate voucher code
 	// --- skip dulu 2023-06-26 -----
 
+	// validate transferAmount for transType distribution
+	if transType == utilities.TransTypeDistribution && payload.TransferAmount == 0 {
+		return c.Status(400).JSON(entity.Responses{
+			Success: false,
+			Message: "transferAmount cannot be 0",
+			Data:    nil,
+		})
+	}
+
 	// validate partnerTransDate
 	_, err = time.Parse("20060102150405", payload.PartnerTransDate)
 	if err != nil {
@@ -83,18 +92,31 @@ func (t *TransactionHandler) CreateTransaction(c *fiber.Ctx, transType int, isMe
 	}
 
 	// 1.2 check total amount == items amount
-	tmpTotalAmt := int64(0)
-	for _, item := range payload.Items {
-		totAmt := int64(item.Qty) * item.Amount
-		tmpTotalAmt += totAmt
-	}
-
-	if payload.TotalAmount != tmpTotalAmt {
-		return c.Status(400).JSON(entity.Responses{
-			Success: false,
-			Message: "total amount mismatch with items amount",
-			Data:    nil,
+	if transType == utilities.TransTypeDistribution {
+		payload.TotalAmount = payload.TransferAmount
+		payload.Items = append(payload.Items, entity.TransactionItem{
+			//ID:     "",
+			//Code:   "",
+			Name:   "Merchant Balance distribution",
+			Amount: payload.TransferAmount,
+			//Price:  0,
+			//Qty:    0,
 		})
+	} else {
+		// transType topup & payment only
+		tmpTotalAmt := int64(0)
+		for _, item := range payload.Items {
+			totAmt := int64(item.Qty) * item.Amount
+			tmpTotalAmt += totAmt
+		}
+
+		if payload.TotalAmount != tmpTotalAmt {
+			return c.Status(400).JSON(entity.Responses{
+				Success: false,
+				Message: "total amount mismatch with items amount",
+				Data:    nil,
+			})
+		}
 	}
 
 	switch transType {
@@ -144,6 +166,8 @@ func (t *TransactionHandler) CreateTransaction(c *fiber.Ctx, transType int, isMe
 			Data:    nil,
 		})
 	}
+
+	transData.(*entity.BalanceTransaction).TransferAmount = 0
 
 	kMsg, _ := json.Marshal(transData)
 
