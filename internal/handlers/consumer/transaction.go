@@ -75,7 +75,11 @@ func (t *TransactionHandler) HandleTransactionResult(message *sarama.ConsumerMes
 	}
 
 	if data == nil {
-		return nil, errors.New("empty message value")
+		return nil, errors.New("| empty message value")
+	}
+
+	if data.TransType == utilities.TransTypeUnknown {
+		return nil, errors.New("| unknown transType")
 	}
 
 	t.transactionRepository.Model = data

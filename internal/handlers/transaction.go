@@ -73,7 +73,7 @@ func (t *TransactionHandler) CreateTransaction(c *fiber.Ctx, transType int, isMe
 	// --- skip dulu 2023-06-26 -----
 
 	// validate transferAmount for transType distribution
-	if transType == utilities.TransTypeDistribution && payload.TransferAmount == 0 {
+	if transType == utilities.TransTypeDistribution && payload.Amount == 0 {
 		return c.Status(400).JSON(entity.Responses{
 			Success: false,
 			Message: "transferAmount cannot be 0",
@@ -93,12 +93,12 @@ func (t *TransactionHandler) CreateTransaction(c *fiber.Ctx, transType int, isMe
 
 	// 1.2 check total amount == items amount
 	if transType == utilities.TransTypeDistribution {
-		payload.TotalAmount = payload.TransferAmount
+		payload.TotalAmount = payload.Amount
 		payload.Items = append(payload.Items, entity.TransactionItem{
 			//ID:     "",
 			//Code:   "",
 			Name:   "Merchant Balance distribution",
-			Amount: payload.TransferAmount,
+			Amount: payload.Amount,
 			//Price:  0,
 			//Qty:    0,
 		})
@@ -167,7 +167,7 @@ func (t *TransactionHandler) CreateTransaction(c *fiber.Ctx, transType int, isMe
 		})
 	}
 
-	transData.(*entity.BalanceTransaction).TransferAmount = 0
+	transData.(*entity.BalanceTransaction).Amount = 0
 
 	kMsg, _ := json.Marshal(transData)
 

@@ -17,7 +17,7 @@ type BalanceTransaction struct {
 	TransDateNumeric int64             `json:"transDateNumeric,omitempty" bson:"transDateNumeric"` // unix time millis
 	ReferenceNo      string            `json:"referenceNo,omitempty" bson:"referenceNo"`
 	ReceiptNumber    string            `json:"receiptNumber,omitempty" bson:"receiptNumber"`
-	LastBalance      int64             `json:"lastBalance,omitempty" bson:"lastBalance"`
+	LastBalance      int64             `json:"lastBalance" bson:"lastBalance"`
 	Status           string            `json:"status,omitempty" bson:"status"`
 	TransType        int               `json:"transType,omitempty" bson:"transType"` // (1) TopUp | (2) Payment | (3) Distribution
 	PartnerTransDate string            `json:"partnerTransDate" bson:"partnerTransDate"`
@@ -27,7 +27,7 @@ type BalanceTransaction struct {
 	TerminalID       string            `json:"terminalId" bson:"terminalId"`
 	TerminalName     string            `json:"terminalName" bson:"terminalName"`
 	TotalAmount      int64             `json:"totalAmount" bson:"totalAmount"`
-	TransferAmount   int64             `json:"transferAmount,omitempty" bson:"-"`
+	Amount           int64             `json:"amount,omitempty" bson:"-"`
 	Items            []TransactionItem `json:"items" bson:"items"`
 	CreatedAt        int64             `json:"createdAt,omitempty" bson:"createdAt,omitempty"`
 	UpdatedAt        int64             `json:"updatedAt,omitempty" bson:"updatedAt,omitempty"`

@@ -28,9 +28,7 @@ func initTransactionRoutes(router fiber.Router) {
 	})
 
 	r.Post("/merchant/distribute", func(c *fiber.Ctx) error {
-		//TODO
 		return h.CreateTransaction(c, utilities.TransTypeDistribution, true)
-		//return c.SendString("Not Implemented Yet")
 	})
 
 	// ------------ UTILITIES ------------
