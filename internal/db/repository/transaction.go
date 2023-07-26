@@ -109,17 +109,23 @@ func (t *TransactionRepository) IsUsedPartnerRefNumber(code string, transType in
 
 func (t *TransactionRepository) Update(transType int) error {
 
-	update := bson.D{
-		{"$set", bson.D{
-			{"transDate", t.Model.TransDate},
-			{"transDateNumeric", t.Model.TransDateNumeric},
-			{"receiptNumber", t.Model.ReceiptNumber},
-			{"status", t.Model.Status},
-			{"lastBalance", t.Model.LastBalance},
-			{"updatedAt", time.Now().UnixMilli()},
-		}},
+	updateField := bson.D{
+		{"transDate", t.Model.TransDate},
+		{"transDateNumeric", t.Model.TransDateNumeric},
+		{"receiptNumber", t.Model.ReceiptNumber},
+		{"status", t.Model.Status},
+		{"lastBalance", t.Model.LastBalance},
+		{"updatedAt", time.Now().UnixMilli()},
 	}
 
+	if transType == utilities.TransTypeDistribution {
+		updateField = append(updateField, bson.D{
+			{"totalAmount", t.Model.TotalAmount},
+			{"items", t.Model.Items},
+		}...)
+	}
+
+	update := bson.D{{"$set", updateField}}
 	result, err := getDefaultCollection(transType).UpdateOne(
 		context.TODO(),
 		bson.D{{"referenceNo", t.Model.ReferenceNo}},

@@ -66,7 +66,7 @@ func (t *TransactionHandler) SendCallback(trx *entity.BalanceTransaction) error 
 	return nil
 }
 
-func (t *TransactionHandler) HandleTransactionResult(message *sarama.ConsumerMessage) (*entity.BalanceTransaction, error) {
+func (t *TransactionHandler) UpdateTransaction(message *sarama.ConsumerMessage) (*entity.BalanceTransaction, error) {
 
 	data := new(entity.BalanceTransaction)
 	err := json.Unmarshal(message.Value, &data)
