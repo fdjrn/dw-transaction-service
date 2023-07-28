@@ -148,8 +148,11 @@ func (t *TransactionRepository) GetTransactionSummary(isPeriod bool) (int64, err
 	filterData := bson.D{
 		{"partnerId", t.Model.PartnerID},
 		{"merchantId", t.Model.MerchantID},
-		{"terminalId", t.Model.TerminalID},
 		{"status", t.Model.Status},
+	}
+
+	if t.Model.TerminalID != "" {
+		filterData = append(filterData, bson.D{{"terminalId", t.Model.TerminalID}}...)
 	}
 
 	if isPeriod {

@@ -417,9 +417,6 @@ func (t *TransactionHandler) TransactionSummaryTopup(c *fiber.Ctx, isPeriod bool
 		}
 	}
 
-	utilities.Log.Println("start date: ", payload.Periods.StartDate)
-	utilities.Log.Println("end date: ", payload.Periods.EndDate)
-
 	payload.Status = utilities.TrxStatusSuccess
 
 	// populate result data.
