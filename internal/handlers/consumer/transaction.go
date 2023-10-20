@@ -34,32 +34,32 @@ func (t *TransactionHandler) SendCallback(trx *entity.BalanceTransaction) error 
 
 	a := fiber.AcquireAgent()
 	req := a.Request()
-	req.SetRequestURI(configs.MainConfig.ExternalResource.CallBackAPI.MDLTransaction)
+	req.SetRequestURI(trx.RequestDetail.Origin)
 	req.Header.SetMethod(fiber.MethodPost)
 	req.Header.SetContentType("application/json")
 	req.Header.Add("X-Webhook-Signature", signatr)
 	req.SetBody(payload)
 
 	if err := a.Parse(); err != nil {
-		return errors.New(fmt.Sprintf("error on send transaction callback with refNo: %s, %s", trx.ReferenceNo, err.Error()))
+		return errors.New(fmt.Sprintf("| error on send transaction callback with refNo: %s, %s", trx.ReferenceNo, err.Error()))
 	}
 
 	callbackResponse := new(entity.CallBackResponseAPI)
 	code, body, _ := a.Bytes()
 	err := json.Unmarshal(body, callbackResponse)
 	if err != nil {
-		return errors.New("error on marshaling response body")
+		return errors.New("| error on marshaling response body")
 	}
 
 	errMsg := ""
 
 	if code != 200 {
-		errMsg = fmt.Sprintf("error on send transaction callback with refNo: %s, %s", trx.ReferenceNo, callbackResponse.Message)
+		errMsg = fmt.Sprintf("| error on send transaction callback with refNo: %s, %s", trx.ReferenceNo, callbackResponse.Message)
 		return errors.New(errMsg)
 	}
 
 	if !callbackResponse.Success {
-		errMsg = fmt.Sprintf("unsuccessful callback response message: %s", callbackResponse.Message)
+		errMsg = fmt.Sprintf("| unsuccessful callback response message: %s", callbackResponse.Message)
 		return errors.New(errMsg)
 	}
 

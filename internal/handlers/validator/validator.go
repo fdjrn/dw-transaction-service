@@ -3,6 +3,7 @@ package validator
 import (
 	"errors"
 	"github.com/fdjrn/dw-transaction-service/internal/db/entity"
+	"github.com/gofiber/fiber/v2"
 )
 
 func ValidateRequest(payload interface{}, isMerchant bool) (interface{}, error) {
@@ -48,4 +49,14 @@ func ValidateRequest(payload interface{}, isMerchant bool) (interface{}, error) 
 	}
 	return msg, nil
 
+}
+
+func HeaderValidation(c *fiber.Ctx) (string, error) {
+	reqHeader := c.GetReqHeaders()
+
+	if v, found := reqHeader["Origin"]; found {
+		//log.Println("value for Origin: ", v)
+		return v, nil
+	}
+	return "", errors.New("origin key header not found")
 }

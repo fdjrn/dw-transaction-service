@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/fdjrn/dw-transaction-service/configs"
 	"github.com/fdjrn/dw-transaction-service/internal/db/entity"
 	"github.com/fdjrn/dw-transaction-service/internal/db/repository"
 	"github.com/fdjrn/dw-transaction-service/internal/handlers/validator"
@@ -43,6 +44,15 @@ func (t *TransactionHandler) rollbackTransaction(c *fiber.Ctx, id interface{}, t
 }
 
 func (t *TransactionHandler) CreateTransaction(c *fiber.Ctx, transType int, isMerchant bool) error {
+
+	origin, err := validator.HeaderValidation(c)
+	if err != nil {
+		return c.Status(400).JSON(entity.Responses{
+			Success: false,
+			Message: err.Error(),
+			Data:    nil,
+		})
+	}
 
 	payload := new(entity.BalanceTransaction)
 	if err := c.BodyParser(payload); err != nil {
@@ -135,6 +145,11 @@ func (t *TransactionHandler) CreateTransaction(c *fiber.Ctx, transType int, isMe
 	tStamp := time.Now().UnixMilli()
 	payload.CreatedAt = tStamp
 	payload.UpdatedAt = tStamp
+
+	// additional field for requestDetail
+	// 2023-10-19 - fdjrn
+	payload.RequestDetail.Timestamp = time.Now().Format("2006-01-02 15:04:05 ")
+	payload.RequestDetail.Origin = fmt.Sprintf("%s%s", origin, configs.MainConfig.ExternalResource.CallBackAPI.MDLTransaction)
 
 	t.repository.Model = payload
 

@@ -32,6 +32,7 @@ type BalanceTransaction struct {
 	CreatedAt        int64             `json:"createdAt,omitempty" bson:"createdAt,omitempty"`
 	UpdatedAt        int64             `json:"updatedAt,omitempty" bson:"updatedAt,omitempty"`
 	Periods          *PeriodsRequest   `json:"periods,omitempty" bson:"-"`
+	RequestDetail    RequestDetail     `json:"requestDetail" bson:"requestDetail"`
 }
 
 type TransactionSummary struct {
@@ -65,4 +66,9 @@ type CallBackResponseAPI struct {
 	Success    bool   `json:"success"`
 	Message    string `json:"message"`
 	StatusCode int    `json:"status_code"`
+}
+
+type RequestDetail struct {
+	Origin    string `json:"origin" bson:"origin"`
+	Timestamp string `json:"timestamp,omitempty" bson:"timestamp"`
 }
