@@ -1,4 +1,6 @@
 .idea
-config.json
-/account-service.log
 /logs/
+/config.json
+/account-service.log
+/config-dev.json
+/config-local.json
